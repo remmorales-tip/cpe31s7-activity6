@@ -1,0 +1,71 @@
+---
+- name: Smart Playbook
+  hosts: test
+
+  tasks:
+  - name: Update apt cache and install Python 3
+    apt:
+      name: python3
+      update_cache: yes
+    when: ansible_distribution == "ubuntu"
+
+  - name: Stop firewall
+    service:
+      name: ufw
+      state: stopped
+      enabled: no
+    when: ansible_distribution == "ubuntu"
+
+  - name: Update yum cache and install Python 3
+    yum:
+      name: python3
+      update_cache: yes
+    when: ansible_distribution == "CentOS"
+
+  - name: Stop firewall
+    service:
+      name: firewalld
+      state: stopped
+      enabled: no
+    when: ansible_distribution == "CentOS"
+
+
+- name: file module and lineinfile
+  hosts: all
+  
+  tasks:
+
+  - name: Include variables from 'config.yaml'
+    include_vars:
+      file: config.yaml
+
+
+  - name: create a file called 'UpdatedHelloworld' in the '/' directory
+    file:
+      path: '/UpdatedHelloworld'
+      state: touch
+      owner: "{{ user }}"
+      group: "{{ user }}"
+      mode: '0755'
+
+  - name: Insert a line inside the 'UpdatedHelloworld' file
+    lineinfile:
+      path: '/UpdatedHelloworld'
+      line: 'This is a file created and updated using the file and lineinfile modules.'
+      state: present
+
+  - name: copy 'myname' to the /home/vagrant directory
+    copy:
+      src: myname
+      dest: /home/vagrant/myname
+      owner: "{{ user }}"
+      group: "{{ user }}"
+      mode: '0755'
+
+  - name: View content of 'myname'
+    shell: "cat /home/{{ user }}/myname"
+    register: output
+
+  - name: show output of 'myname'
+    debug:
+      var: output
